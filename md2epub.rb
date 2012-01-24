@@ -22,7 +22,7 @@ class Chapter
 end
 
 class EPub
-  attr_accessor :title, :author, :lang, :basename, :path, :bookid, :url, :css, :cover, :toc, :images, :children
+  attr_accessor :title, :author, :lang, :basename, :path, :bookid, :url, :css, :cover, :toc, :images, :children, :maxdepth
   def initialize
 	  @lang = 'en-US'
 	  @images = []				# list of images to be included
@@ -30,6 +30,7 @@ class EPub
 
 	  @navpointcount = 1		# used for navpoint counts
 	  @chapterids = []
+	  @maxdepth = 1
   end
 
 	# takes a list of chapters and writes the <item> tags for them and their children
@@ -39,11 +40,11 @@ class EPub
 			id = unique_id(chapter.id, pre)
 
 			# Make sure we don't put duplicates in
-			if not @chapterids.include?(id)
-				@chapterids << id
-			else
-				puts "Duplicate ID: #{id}"
+			if @chapterids.include?(id)
+			  STDERR.puts "Duplicate ID: #{id}"
 				exit -1
+			else
+				@chapterids << id
 			end
 
 			# Write it out
@@ -85,7 +86,7 @@ class EPub
 				input = File.open('../' + chapter.filename, 'r')
 				f = File.open(chapter.htmlfile, 'w')
 			rescue
-				print "Error reading file '#{chapter.filename}' from table of contents."
+				STDERR.puts "Error reading file '#{chapter.filename}' from table of contents."
 				exit -1
 			end
 			sourcetext = input.read
@@ -215,7 +216,7 @@ class EPub
 			# if there's a CSS file, copy it in
 			if @css
 				if not File.exists? "../#{@css}"
-					puts "CSS file doesn't exist."
+					STDERR.puts "CSS file doesn't exist."
 					exit -1
 				end
 				css = File.open("../#{@css}", 'r')
@@ -229,7 +230,7 @@ class EPub
 			# copy cover art into the directory
 			if @cover
 				if not File.exists? "../#{@cover}"
-					puts "Cover art file doesn't exist."
+					STDERR.puts "Cover art file doesn't exist."
 					exit -1
 				end
 				dest = File.basename(@cover)
@@ -335,7 +336,7 @@ def process_book(filename)
   			chapter.htmlfile = "#{basename.split('.')[0]}.html"
 
   			# for the ID, lowercase it all, strip punctuation, and replace spaces with underscores
-  			# chapter.id = chapter.title.downcase.gsub(' ', '_')
+  			chapter.id = chapter.title.downcase.gsub(' ', '_')
 			
   			# if there's no ID left (because the chapter title is all Unicode, for example),
   			# use the basename of the file instead
@@ -344,8 +345,8 @@ def process_book(filename)
   			# add the current chapter
   			epub.add_chapter(chapter)
   		else
-  			puts "Error on the following line:\n"
-  			puts line
+  			STDERR.puts "Error on the following line:\n"
+  			STDERR.puts line
   		  exit -1
       end
     end
