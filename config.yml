@@ -1,0 +1,11 @@
+---
+:title: Sample Story
+:author: John Doe
+:css: css/style.css
+:chapters:
+  - :title: "Chapter 1: The Adventure Begins"
+    :source: chapter-01.md
+  - :title: "Chapter 2: Once More Into the Demon's Den"
+    :source: chapter-02.md
+  - :title: "Chapter 3: The Lay of the Land"
+    :source: chapter-03.md
