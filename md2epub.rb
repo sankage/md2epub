@@ -333,7 +333,7 @@ def process_book(filename)
 
   			# replace extension with .html
   			basename = File.basename(chapter.filename)
-  			chapter.htmlfile = "#{basename.split('.')[0]}.html"
+  			chapter.htmlfile = "#{basename.split('.')[0..-2].join('.')}.html"
 
   			# for the ID, lowercase it all, strip punctuation, and replace spaces with underscores
   			chapter.id = chapter.title.downcase.gsub(' ', '_')
