@@ -15,10 +15,7 @@ require 'redcarpet'
 require 'zip/zip'
 
 class Chapter
-  attr_accessor :title, :filename, :htmlfile, :id, :children
-	def initialize
-  	@children = []
-	end
+  attr_accessor :title, :filename, :htmlfile, :id
 end
 
 class EPub
@@ -49,7 +46,6 @@ class EPub
 
 			# Write it out
 			f.puts "\t\t<item id=\"#{id}\" href=\"#{chapter.htmlfile}\" media-type=\"application/xhtml+xml\" />"
-			write_items(chapter.children, f, id) if chapter.children
 		end
 	end
 
@@ -59,7 +55,6 @@ class EPub
 	  children.each do |chapter|
       id = unique_id(chapter.id, pre)
 			f.puts "\t\t<itemref idref=\"#{id}\" />"
-			write_itemrefs(chapter.children, f, id) if chapter.children
 		end
 	end
 
@@ -73,7 +68,6 @@ class EPub
 			f.puts "\t\t\t<navLabel><text>#{chapter.title}</text></navLabel>"
 			f.puts "\t\t\t<content src=\"#{chapter.htmlfile}\"/>"
 			@navpointcount += 1
-			write_chapter_navpoints(chapter.children, f, id) if chapter.children
 			f.puts "\t\t</navPoint>"
 		end
 	end
@@ -111,8 +105,6 @@ class EPub
 			f.puts "</html>"
 
 			f.close
-
-			convert_chapters_to_markdown(chapter.children) if chapter.children
 		end
 	end
 
