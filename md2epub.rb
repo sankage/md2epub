@@ -77,6 +77,13 @@ class EPub
 			File.open('container.xml','w') { |f| f.puts container_xml }
       FileUtils.cd '..'
 
+      # make a table of contents file
+      File.open('table_of_contents.html', 'w') { |f| f.puts write_toc }
+      @toc = 'table_of_contents.html'
+      
+      # make a title page
+      File.open('title_page.html', 'w') { |f| f.puts write_title_page }
+      
 			# make content.opf
 			File.open('content.opf','w') { |f| f.puts content_xml }
 
@@ -233,6 +240,19 @@ private
 		toc << "\t\t<text>#{@title}</text>"
 		toc << "\t</docTitle>"
 		toc << "\t<navMap>"
+
+		@navpointcount += 1
+	  toc << "\t\t<navPoint id=\"navpoint-1\" playOrder=\"1\">"
+		toc << "\t\t\t<navLabel><text>#{@title}</text></navLabel>"
+		toc << "\t\t\t<content src=\"title_page.html\"/>"
+		toc << "\t\t</navPoint>"
+
+	  @navpointcount += 1
+	  toc << "\t\t<navPoint id=\"navpoint-2\" playOrder=\"2\">"
+		toc << "\t\t\t<navLabel><text>Table of Contents</text></navLabel>"
+		toc << "\t\t\t<content src=\"#{@toc}\"/>"
+		toc << "\t\t</navPoint>"
+		
 		toc << chapter_navpoints
 		toc << "\t</navMap>"
 		toc << "</ncx>"
@@ -271,6 +291,12 @@ private
 			ext = 'jpeg' if ext == 'jpg'
 			content << "\t\t<item id=\"book-cover\" href=\"#{imagefile}\" media-type=\"image/#{ext}\" />"
 		end
+		
+		# add title page
+		content << "\t\t<item id=\"title_page\" href=\"title_page.html\" media-type=\"application/xhtml+xml\" />"
+		
+		# add table of contents
+		content << "\t\t<item id=\"table_of_contents\" href=\"#{@toc}\" media-type=\"application/xhtml+xml\" />"
 
 		# write the <item> tags
 		content << chapter_items
@@ -286,6 +312,8 @@ private
 		content << "\t</manifest>"
 		content << "\t<spine toc=\"ncx\">"
 
+    content << "\t\t<itemref idref=\"title_page\" />"
+    content << "\t\t<itemref idref=\"table_of_contents\" />"
 		# write the <itemref> tags
 		content << itemrefs
 
@@ -301,7 +329,30 @@ private
 		content.join("\n")
   end
   
+  def write_toc
+    toc = []
+    # write HTML header
+		toc << header
+    toc << "<h2>Table of Contents</h2>"
+    toc << "<ul>"
+    @chapters.each do |chapter|
+      toc << "\t<li><a href=\"#{chapter[:htmlfile]}\">#{chapter[:title]}</a></li>"
     end
+    toc << "</ul>"
+		# write HTML footer
+		toc << footer
+		toc.join("\n")
+  end
+  
+  def write_title_page
+    title = []
+    title << header
+    
+    title << "<h1 class=\"title\">#{@title}</h1>"
+    title << "<div class=\"author\">By #{@author}</p>"
+    
+    title << footer
+    title.join("\n")
   end
   
   def header
