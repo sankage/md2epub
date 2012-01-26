@@ -209,21 +209,11 @@ private
 			input.close
 
 			# write HTML header
-			f.puts "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      f.puts "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
-      f.puts "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
-      f.puts "<head>"
-      f.puts "<title>#{@title}</title>"
-			f.puts "<link rel=\"stylesheet\" type=\"text/css\" href=\"#{File.basename(@css)}\" />" if @css
-			f.puts "</head>"
-			f.puts "<body>"
-
+			f.puts header
 			# write the Markdowned text
 			f.puts markdown(sourcetext)
-
 			# write HTML footer
-			f.puts "</body>"
-			f.puts "</html>"
+			f.puts footer
 
 			f.close
 		end
@@ -314,7 +304,28 @@ private
     end
   end
   
+  def header
+    # write HTML header
+    head = []
+		head << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    head << "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">"
+    head << "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
+    head << "<head>"
+    head << "<title>#{@title}</title>"
+		head << "<link rel=\"stylesheet\" type=\"text/css\" href=\"#{File.basename(@css)}\" />" if @css
+		head << "</head>"
+		head << "<body>"
+		head.join("\n")
+  end
   
+  def footer
+    foot = []
+    # write HTML footer
+		foot << "</body>"
+		foot << "</html>"
+		foot.join("\n")
+	end
+		
 end
 
 
