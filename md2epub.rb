@@ -192,8 +192,9 @@ private
 	def chapter_navpoints
 	  result = []
 	  @chapters.each do |chapter|
+	    title = chapter[:title].gsub('&', '&amp;')
 			result << "\t\t<navPoint id=\"navpoint-#{@navpointcount.to_s}\" playOrder=\"#{@navpointcount.to_s}\">"
-			result << "\t\t\t<navLabel><text>#{chapter[:title]}</text></navLabel>"
+			result << "\t\t\t<navLabel><text>#{title}</text></navLabel>"
 			result << "\t\t\t<content src=\"#{chapter[:htmlfile]}\"/>"
 			result << "\t\t</navPoint>"
 			@navpointcount += 1
@@ -321,7 +322,7 @@ private
 
     if @toc
 		  content << "\t<guide>"
-		  content << "\t\t<reference type=\"toc\" title=\"Table of Contents\" href=\"#{@toc}.html\" />"
+		  content << "\t\t<reference type=\"toc\" title=\"Table of Contents\" href=\"#{@toc}\" />"
 		  content << "\t</guide>"
 		end
 
@@ -336,7 +337,8 @@ private
     toc << "<h2>Table of Contents</h2>"
     toc << "<ul>"
     @chapters.each do |chapter|
-      toc << "\t<li><a href=\"#{chapter[:htmlfile]}\">#{chapter[:title]}</a></li>"
+      title = chapter[:title].gsub('&', '&amp;')
+      toc << "\t<li><a href=\"#{chapter[:htmlfile]}\">#{title}</a></li>"
     end
     toc << "</ul>"
 		# write HTML footer
@@ -349,7 +351,7 @@ private
     title << header
     
     title << "<h1 class=\"title\">#{@title}</h1>"
-    title << "<div class=\"author\">By #{@author}</p>"
+    title << "<h3 class=\"author\">By #{@author}</h3>"
     
     title << footer
     title.join("\n")
