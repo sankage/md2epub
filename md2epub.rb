@@ -16,12 +16,48 @@ require 'zip/zip'
 require 'yaml'
 
 class EPub
-  attr_accessor :lang, :basename, :path, :bookid, :url, :maxdepth, :working_dir
-  def initialize
-	  @lang = 'en-US'
+  def initialize(filename)
 	  @navpointcount = 1		# used for navpoint counts
 	  @chapterids = []
 	  @maxdepth = 1
+	  
+	  now = Time.now
+
+  	@basename = File.basename(filename).split('.')[0]
+  	@path = "#{@basename}_#{now.year}-#{now.month}-#{now.day}_#{now.hour}-#{now.min}-#{now.sec}"
+  	@url = "http://localhost/#{@path}"		# dummy URL, replaced in control file
+
+  	config_file = File.expand_path(filename)
+  	if File.exists? config_file
+  	  config_options = YAML.load_file(config_file)
+    end
+    if config_options[:chapters].nil?
+      STDERR.puts "No chapters declared"
+      exit 1
+    end
+
+    config_options[:chapters].each do |chapter|
+      if chapter[:title].index(':')
+        chapter[:id] = chapter[:title].split(':')[0].downcase.gsub(' ', '_')
+      else
+        chapter[:id] = chapter[:title][0..10]
+      end
+      chapter[:htmlfile] = "#{chapter[:source].split('.')[0..-2].join('.')}.html"
+    end
+
+    @basename = config_options[:title].downcase.gsub(' ', '_')
+    @working_dir = File.split(File.expand_path(filename))[0]
+    
+    @title = config_options[:title]
+    @author = config_options[:author]
+    @css = config_options[:css]
+    @cover = config_options[:cover]
+    @lang = config_options[:lang] || 'en-US'
+    @chapters = config_options[:chapters]
+
+  	# create a (hopefully unique) book ID
+  	@bookid = "[#{@title}|#{@author}]"
+	  
   end
   
 	# the main worker
@@ -108,19 +144,6 @@ class EPub
 			exit 1
 		end
 	end
-  
-  def metaclass
-    class << self
-      self
-    end
-  end
-
-  def define_attributes(hash)
-    hash.each_pair { |key, value|
-      metaclass.send :attr_accessor, key
-      send "#{key}=".to_sym, value
-    }
-  end
 
 private
 	
@@ -287,52 +310,17 @@ private
 		content << "</package>"
 		content.join("\n")
   end
-		
-end
-
-
-def process_book(filename)
-	epub = EPub.new
-
-	now = Time.now
-	
-	epub.basename = File.basename(filename).split('.')[0]
-	epub.path = "#{epub.basename}_#{now.year}-#{now.month}-#{now.day}_#{now.hour}-#{now.min}-#{now.sec}"
-	epub.url = "http://localhost/#{epub.path}"		# dummy URL, replaced in control file
-	
-	config_file = File.expand_path(filename)
-	if File.exists? config_file
-	  config_options = YAML.load_file(config_file)
-  end
-  if config_options[:chapters].nil?
-    STDERR.puts "No chapters declared"
-    exit 1
-  end
   
-  config_options[:chapters].each do |chapter|
-    if chapter[:title].index(':')
-      chapter[:id] = chapter[:title].split(':')[0].downcase.gsub(' ', '_')
-    else
-      chapter[:id] = chapter[:title][0..10]
     end
-    chapter[:htmlfile] = "#{chapter[:source].split('.')[0..-2].join('.')}.html"
   end
   
-  epub.basename = config_options[:title].downcase.gsub(' ', '_')
-  epub.working_dir = File.split(File.expand_path(filename))[0]
   
-  epub.define_attributes(config_options)
-
-	# create a (hopefully unique) book ID
-	epub.bookid = "[#{epub.title}|#{epub.author}]"
-
-	epub
 end
 
 
 ##### Main
 
 if ARGV.length > 0
-  epub = process_book ARGV.shift
+  epub = EPub.new(ARGV.shift)
 	epub.save
 end
