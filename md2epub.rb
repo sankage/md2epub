@@ -120,7 +120,7 @@ class EPub
 			File.open('toc.ncx','w') { |f| f.puts table_of_contents_xml }
 
 			# convert the texts to Markdown and save in the directory
-			convert_chapters_to_markdown
+			convert_chapters_to_markdown(@chapters)
 
 			# if there's a CSS file, copy it in
 			if @css
@@ -190,69 +190,64 @@ private
   end
   
   # takes a list of chapters and writes the <item> tags for them and their children
-	def chapter_items
+	def self.chapter_items(chapters)
 	  result = []
-	  @chapters.each do |chapter|
-			# Make sure we don't put duplicates in
-			if @chapterids.include?(chapter[:id])
-			  STDERR.puts "Duplicate ID: #{chapter[:id]}"
-				exit 1
-			else
-				@chapterids << chapter[:id]
-			end
+	  chapters.each do |chapter|
 
-			result << "\t\t<item id=\"#{chapter[:id]}\" href=\"#{chapter[:htmlfile]}\" media-type=\"application/xhtml+xml\" />"
+			result << "\t\t<item id=\"#{chapter.id}\" href=\"#{chapter.htmlfile}\" media-type=\"application/xhtml+xml\" />"
+			result << self.chapter_items(chapter.subchapters) unless chapter.subchapters.empty?
 		end
 		result.join("\n")
 	end
 
 
 	# takes a list of chapters and writes the <itemref> tags for them and their children
-	def itemrefs
+	def self.itemrefs(chapters)
 	  result = []
-	  @chapters.each do |chapter|
-			result << "\t\t<itemref idref=\"#{chapter[:id]}\" />"
+	  chapters.each do |chapter|
+			result << "\t\t<itemref idref=\"#{chapter.id}\" />"
+			result << self.itemrefs(chapter.subchapters) unless chapter.subchapters.empty?
 		end
 		result.join("\n")
 	end
 
 
 	# takes a list of chapters and writes them and their children to a navmap
-	def chapter_navpoints
+	def chapter_navpoints(chapters)
 	  result = []
-	  @chapters.each do |chapter|
-	    title = chapter[:title].gsub('&', '&amp;')
-			result << "\t\t<navPoint id=\"navpoint-#{@navpointcount.to_s}\" playOrder=\"#{@navpointcount.to_s}\">"
+	  chapters.each do |chapter|
+	    title = chapter.title.gsub('&', '&amp;')
+			result << "\t\t<navPoint id=\"navpoint-#{@navpointcount}\" playOrder=\"#{@navpointcount}\">"
 			result << "\t\t\t<navLabel><text>#{title}</text></navLabel>"
-			result << "\t\t\t<content src=\"#{chapter[:htmlfile]}\"/>"
-			result << "\t\t</navPoint>"
+			result << "\t\t\t<content src=\"#{chapter.htmlfile}\"/>"
 			@navpointcount += 1
+			result << chapter_navpoints(chapter.subchapters) unless chapter.subchapters.empty?
+			result << "\t\t</navPoint>"
 		end
 		result.join("\n")
 	end
 
 
 	# takes a list of chapters and converts them and their children to Markdown
-	def convert_chapters_to_markdown
-	  @chapters.each do |chapter|
+	def convert_chapters_to_markdown(chapters)
+	  chapters.each do |chapter|
+	    sourcetext = ""
 			begin
-				input = File.open('../' + chapter[:source], 'r')
-				f = File.open(chapter[:htmlfile], 'w')
+				File.open('../' + chapter.source, 'r') { |f| sourcetext = f.read }
 			rescue
-				STDERR.puts "Error reading file '#{chapter[:source]}' from table of contents."
+				STDERR.puts "Error reading file '#{chapter.source}' from table of contents."
 				exit -1
 			end
-			sourcetext = input.read
-			input.close
 
-			# write HTML header
-			f.puts header
-			# write the Markdowned text
-			f.puts markdown(sourcetext)
-			# write HTML footer
-			f.puts footer
-
-			f.close
+			File.open(chapter.htmlfile, 'w') do |f|
+			  # write HTML header
+  			f.puts header
+  			# write the Markdowned text
+  			f.puts markdown(sourcetext)
+  			# write HTML footer
+  			f.puts footer
+		  end
+		  convert_chapters_to_markdown(chapter.subchapters) unless chapter.subchapters.empty?
 		end
 	end
 	
@@ -283,7 +278,7 @@ private
 		toc << "\t\t\t<content src=\"#{@toc}\"/>"
 		toc << "\t\t</navPoint>"
 		
-		toc << chapter_navpoints
+		toc << chapter_navpoints(@chapters)
 		toc << "\t</navMap>"
 		toc << "</ncx>"
 		toc.join("\n")
@@ -329,7 +324,7 @@ private
 		content << "\t\t<item id=\"table_of_contents\" href=\"#{@toc}\" media-type=\"application/xhtml+xml\" />"
 
 		# write the <item> tags
-		content << chapter_items
+		content << EPub.chapter_items(@chapters)
     
     if @images
       @images.each do |image|
@@ -345,7 +340,7 @@ private
     content << "\t\t<itemref idref=\"title_page\" />"
     content << "\t\t<itemref idref=\"table_of_contents\" />"
 		# write the <itemref> tags
-		content << itemrefs
+		content << EPub.itemrefs(@chapters)
 
 		content << "\t</spine>"
 
@@ -364,15 +359,24 @@ private
     # write HTML header
 		toc << header
     toc << "<h2>Table of Contents</h2>"
-    toc << "<ul>"
-    @chapters.each do |chapter|
-      title = chapter[:title].gsub('&', '&amp;')
-      toc << "\t<li><a href=\"#{chapter[:htmlfile]}\">#{title}</a></li>"
-    end
-    toc << "</ul>"
+    toc << EPub.toc_line_items(@chapters)
 		# write HTML footer
 		toc << footer
 		toc.join("\n")
+  end
+  
+  def self.toc_line_items(chapters)
+    line_items = ["<ul>"]
+    chapters.each do |chapter|
+      line_item = ["<li>"]
+      title = chapter.title.gsub('&', '&amp;')
+      line_item << "<a href=\"#{chapter.htmlfile}\">#{title}</a>"
+      line_item << self.toc_line_items(chapter.subchapters) unless chapter.subchapters.empty?
+      line_item << "</li>"
+      line_items << line_item.join
+    end
+    line_items << "</ul>"
+    line_items.join("\n")
   end
   
   def write_title_page
