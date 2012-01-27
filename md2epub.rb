@@ -45,7 +45,6 @@ class EPub
 
   	@basename = File.basename(filename).split('.')[0]
   	@path = "#{@basename}_#{now.year}-#{now.month}-#{now.day}_#{now.hour}-#{now.min}-#{now.sec}"
-  	@url = "http://localhost/#{@path}"		# dummy URL, replaced in control file
 
   	config_file = File.expand_path(filename)
   	if File.exists? config_file
@@ -70,7 +69,7 @@ class EPub
     @lang = config_options[:lang] || 'en-US'
     
   	# create a (hopefully unique) book ID
-  	@bookid = "[#{@title}|#{@author}]"
+  	@bookid = Digest::SHA1.hexdigest "[#{@title}|#{@author}]"
 	  
   end
   
@@ -171,14 +170,14 @@ class EPub
       
       FileUtils.cd cwd
       FileUtils.rm_rf(@path)
-		rescue
-			STDERR.puts "Error while saving epub."
+    rescue
+      STDERR.puts "Error while saving epub."
 
-			# if something went wrong, remove the temp directory
-			FileUtils.cd cwd
-			FileUtils.rm_rf(@path)
-			exit 1
-		end
+      # if something went wrong, remove the temp directory
+      FileUtils.cd cwd
+      FileUtils.rm_rf(@path)
+      exit 1
+    end
 	end
 
 private
@@ -256,7 +255,7 @@ private
 		toc << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 		toc << "<ncx version=\"2005-1\" xmlns=\"http://www.daisy.org/z3986/2005/ncx/\">"
 		toc << "\t<head>"
-		toc << "\t\t<meta name=\"dtb:uid\" content=\"#{@url}\" />"
+		toc << "\t\t<meta name=\"dtb:uid\" content=\"#{@bookid}\" />"
 		toc << "\t\t<meta name=\"dtb:depth\" content=\"#{@maxdepth.to_s}\" />"
 		toc << "\t\t<meta name=\"dtb:totalPageCount\" content=\"0\" />"
 		toc << "\t\t<meta name=\"dtb:maxPageNumber\" content=\"0\" />"
@@ -303,7 +302,7 @@ private
 		content << "\t\t<dc:title>#{@title}</dc:title>"
 		content << "\t\t<dc:creator opf:role=\"aut\">#{@author}</dc:creator>"
 		content << "\t\t<dc:language>#{@lang}</dc:language>"
-		content << "\t\t<dc:identifier id=\"BookId\">#{@url}</dc:identifier>"
+		content << "\t\t<dc:identifier id=\"BookId\">#{@bookid}</dc:identifier>"
 		content << "\n\t\t<meta name=\"cover\" content=\"book-cover\" />" if @cover
 		content << "\t</metadata>"
 		content << "\t<manifest>"
@@ -403,7 +402,7 @@ private
 		head << "<body>"
 		head.join("\n")
   end
-  
+
   def footer
     foot = []
     # write HTML footer
