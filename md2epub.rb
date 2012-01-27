@@ -14,12 +14,25 @@ require 'fileutils'
 require 'redcarpet'
 require 'zip/zip'
 require 'yaml'
+require 'digest/sha1'
+
+class Chapter
+  attr_reader :title, :source, :id, :htmlfile
+  def initialize(title, source)
+    @title = title
+    @source = source
+    @id = Digest::SHA1.hexdigest "#{@title}_#{@source}"
+    @htmlfile = "#{@source.split('.')[0..-2].join('.')}.html"
+  end
+  
+end
 
 class EPub
   def initialize(filename)
 	  @navpointcount = 1		# used for navpoint counts
 	  @chapterids = []
 	  @maxdepth = 1
+    @chapters = []
 	  
 	  now = Time.now
 
@@ -37,12 +50,7 @@ class EPub
     end
 
     config_options[:chapters].each do |chapter|
-      if chapter[:title].index(':')
-        chapter[:id] = chapter[:title].split(':')[0].downcase.gsub(' ', '_')
-      else
-        chapter[:id] = chapter[:title][0..10]
-      end
-      chapter[:htmlfile] = "#{chapter[:source].split('.')[0..-2].join('.')}.html"
+      add_chapter(chapter)
     end
 
     @basename = config_options[:title].downcase.gsub(' ', '_')
@@ -53,13 +61,16 @@ class EPub
     @css = config_options[:css]
     @cover = config_options[:cover]
     @lang = config_options[:lang] || 'en-US'
-    @chapters = config_options[:chapters]
-
+    
   	# create a (hopefully unique) book ID
   	@bookid = "[#{@title}|#{@author}]"
 	  
   end
   
+  def add_chapter(chapter_hash, parent_chapter = nil)
+    chapter = Chapter.new(chapter_hash[:title], chapter_hash[:source])
+      @chapters << chapter
+  end
 	# the main worker
 	def save
 		# get current working directory
