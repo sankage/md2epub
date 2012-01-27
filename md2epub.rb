@@ -17,14 +17,21 @@ require 'yaml'
 require 'digest/sha1'
 
 class Chapter
+  attr_accessor :subchapters
   attr_reader :title, :source, :id, :htmlfile
   def initialize(title, source)
     @title = title
     @source = source
     @id = Digest::SHA1.hexdigest "#{@title}_#{@source}"
     @htmlfile = "#{@source.split('.')[0..-2].join('.')}.html"
+    @subchapters = []
   end
   
+  def add_subchapter(chapter)
+    @subchapters << chapter
+  end
+  
+  alias :<< :add_subchapter
 end
 
 class EPub
@@ -69,8 +76,19 @@ class EPub
   
   def add_chapter(chapter_hash, parent_chapter = nil)
     chapter = Chapter.new(chapter_hash[:title], chapter_hash[:source])
+    # add subchapters to the chapter if they are specified
+    if chapter_hash[:subchapters]
+      chapter_hash[:subchapters].each { |subchapter| add_chapter(subchapter, chapter) }
+    end
+    if parent_chapter
+      # add subchapter to the parent chapter
+      parent_chapter << chapter
+    else
+      # add chapter to the epub
       @chapters << chapter
+    end
   end
+  
 	# the main worker
 	def save
 		# get current working directory
