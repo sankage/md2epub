@@ -23,7 +23,7 @@ class Chapter
     @title = title
     @source = source
     @id = Digest::SHA1.hexdigest "#{@title}_#{@source}"
-    @htmlfile = "#{@source.split('.')[0..-2].join('.')}.html"
+    @htmlfile = "#{File.basename(@source).split('.')[0..-2].join('.')}.html"
     @subchapters = []
   end
   
@@ -172,7 +172,7 @@ class EPub
       FileUtils.rm_rf(@path)
     rescue
       STDERR.puts "Error while saving epub."
-
+    
       # if something went wrong, remove the temp directory
       FileUtils.cd cwd
       FileUtils.rm_rf(@path)
