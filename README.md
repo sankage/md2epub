@@ -41,11 +41,11 @@ If you have subchapters, add them to their parent chapter with the key :subchapt
     :source: chapter-01.md
   - :title: "Chapter 2: Once More Into the Demon's Den"
     :source: chapter-02.md
-		:subchapters:
-		- :title: "Section A: Really?"
-			:source: chapter-02a.md
-		- :title: "Section B: Man, I really liked that leg..."
-			:source: chapter-02b.md
+    :subchapters:
+    - :title: "Section A: Really?"
+      :source: chapter-02a.md
+    - :title: "Section B: Man, I really liked that leg..."
+      :source: chapter-02b.md
   - :title: "Chapter 3: The Lay of the Land"
     :source: chapter-03.md
 ```
