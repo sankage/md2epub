@@ -61,10 +61,9 @@ class EPub
 
     @basename = config_options[:title].downcase.gsub(' ', '_')
     @working_dir = File.split(File.expand_path(filename))[0]
-    
     @title = config_options[:title]
     @author = config_options[:author]
-    @css = config_options[:css]
+    @css = config_options[:css] || File.join(File.split(File.expand_path(__FILE__))[0],'epub.css')
     @cover = config_options[:cover]
     @lang = config_options[:lang] || 'en-US'
     
@@ -123,11 +122,11 @@ class EPub
 
       # if there's a CSS file, copy it in
       if @css
-        if not File.exists? "../#{@css}"
+        if not File.exists? @css
           STDERR.puts "CSS file doesn't exist."
           exit -1
         end
-        css = File.open("../#{@css}", 'r')
+        css = File.open(@css, 'r')
         csstext = css.read
         css.close
         File.open(File.basename(@css), 'w') do |f|
