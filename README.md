@@ -7,7 +7,7 @@ A command line ruby script to transform a collection of [markdown](http://daring
 
 ## HOW TO USE
 
-Create a yml file that includes the book's title, author, css file, and chapters
+Create a yml file that includes the book's title, author, css file (optional), and chapters
 
 ```yaml
 ---
@@ -26,7 +26,13 @@ Create a yml file that includes the book's title, author, css file, and chapters
 Then just run the script with this file
 
 ```bash
-ruby md2epub.rb sample.yml
+./md2epub.rb sample.yml
+```
+
+If you wish for the results to be saved in another location, add the target folder to the command
+
+```bash
+./md2epub.rb sample.yml ~/Documents
 ```
 
 If you have subchapters, add them to their parent chapter with the key :subchapters

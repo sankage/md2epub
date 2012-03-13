@@ -88,7 +88,7 @@ class EPub
   end
   
   # the main worker
-  def save
+  def save(target=nil)
     # get current working directory
     cwd = @working_dir
     FileUtils.cd cwd
@@ -154,7 +154,11 @@ class EPub
 
       # now zip the ePub up
       FileUtils.cd cwd
-      output_path = File.expand_path("#{@basename}.epub")
+      if target.nil?
+        output_path = File.expand_path("#{@basename}.epub")
+      else
+        output_path = File.expand_path(File.join(target, "#{@basename}.epub"))
+      end
       Zip::ZipOutputStream::open(output_path) do |os|
         os.put_next_entry("mimetype", nil, nil, Zip::ZipEntry::STORED, Zlib::NO_COMPRESSION)
         os <<  "application/epub+zip"
@@ -402,5 +406,9 @@ end
 
 if ARGV.length > 0
   epub = EPub.new(ARGV.shift)
-  epub.save
+  if ARGV.length
+    epub.save(ARGV.shift)
+  else
+    epub.save
+  end
 end
