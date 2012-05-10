@@ -40,6 +40,7 @@ class EPub
     @chapterids = []
     @maxdepth = 1
     @chapters = []
+    @images = []
 	  
     now = Time.now
 
@@ -110,9 +111,6 @@ class EPub
       
       # make a title page
       File.open('title_page.html', 'w') { |f| f.puts write_title_page }
-      
-      # make content.opf
-      File.open('content.opf','w') { |f| f.puts content_xml }
 
       # make toc.ncx
       File.open('toc.ncx','w') { |f| f.puts table_of_contents_xml }
@@ -146,12 +144,23 @@ class EPub
 
       # copy images into the directory
       if @images
+        FileUtils.mkdir 'images'
         @images.each do |image|
           dest = File.basename(image)
-          FileUtils.cp "../#{image}", dest
+          FileUtils.cp "../#{image}", "images/#{dest}"
         end
       end
-
+      
+      # make content.opf
+      File.open('content.opf','w') { |f| f.puts content_xml }
+      
+    rescue
+      STDERR.puts "Error while creating epub."
+      FileUtils.cd cwd
+      FileUtils.rm_rf(@path)
+      exit 1
+    end
+    begin
       # now zip the ePub up
       FileUtils.cd cwd
       if target.nil?
@@ -168,6 +177,9 @@ class EPub
       zipfile.add('META-INF/container.xml', 'META-INF/container.xml')
       Dir.glob("*").each do |path|
         zipfile.add(path, path)
+      end
+      if @images
+        Dir.glob("images/*").each { |path| zipfile.add(path, path) }
       end
       zipfile.commit
       
@@ -236,6 +248,9 @@ private
         STDERR.puts "Error reading file '#{chapter.source}' from table of contents."
         exit -1
       end
+      
+      images = sourcetext.scan(/\!\[(.+)\]\((.*\.(?:jpg|png|gif|svg))\)/)
+      images.each { |image| @images << image[1] }
 
       File.open(chapter.htmlfile, 'w') do |f|
         # write HTML header
@@ -324,7 +339,7 @@ private
         imagefile = File.basename(image)
         ext = File.extname(imagefile)[1..-1]	# get the extension
         ext = 'jpeg' if ext == 'jpg'
-        content << "\t\t<item id=\"#{imagefile}\" href=\"#{imagefile}\" media-type=\"image/#{ext}\" />"
+        content << "\t\t<item id=\"#{imagefile}\" href=\"images/#{imagefile}\" media-type=\"image/#{ext}\" />"
       end
     end
     
@@ -411,4 +426,6 @@ if ARGV.length > 0
   else
     epub.save
   end
+else
+  puts "./md2epub.rb <yml file> <save dest>"
 end
